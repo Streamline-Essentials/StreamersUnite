@@ -1,4 +1,32 @@
-name: ExampleProject
+name: '${name}'
 version: '${version}'
-main: host.plas.exampleproject.ExampleProject
-api-version: '1.20'
+main: '${main}'
+
+commands:
+  sustreamer:
+    description: Main command for StreamersUnite
+    permission: streamersunite.command.sustreamer
+    usage: /<command>
+    aliases: []
+  live:
+    description: Command to set yourself as live
+    permission: streamersunite.command.live
+    usage: /<command>
+    aliases:
+      - on
+      - online
+  offline:
+    description: Command to set yourself as offline
+    permission: streamersunite.command.offline
+    usage: /<command>
+    aliases:
+      - off
+      - unlive
+  livenow:
+    description: Command to see who is live
+    permission: streamersunite.command.livenow
+    usage: /<command>
+    aliases:
+      - lnow
+      - currentlylive
+      - checklive
