@@ -4,14 +4,16 @@ import host.plas.streamersunite.StreamersUnite;
 import host.plas.streamersunite.utils.MessageUtils;
 import lombok.Getter;
 import lombok.Setter;
-import net.md_5.bungee.api.chat.*;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,10 +50,14 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
 
     public void addCommandLive(String command) {
         goLiveCommands.add(command);
+
+        save();
     }
 
     public void addCommandOffline(String command) {
         goOfflineCommands.add(command);
+
+        save();
     }
 
     public void removeCommand(CommandType type, int index) {
@@ -62,6 +68,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
     public void removeCommandLive(int index) {
         try {
             goLiveCommands.remove(index);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -70,6 +78,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
     public void removeCommandOffline(int index) {
         try {
             goOfflineCommands.remove(index);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -85,6 +95,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             if (index > goLiveCommands.size()) index = goLiveCommands.size();
 
             goLiveCommands.add(index, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -95,6 +107,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             if (index > goOfflineCommands.size()) index = goOfflineCommands.size();
 
             goOfflineCommands.add(index, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -112,6 +126,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             String command = goLiveCommands.get(index);
             goLiveCommands.remove(index);
             goLiveCommands.add(index - 1, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -124,6 +140,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             String command = goOfflineCommands.get(index);
             goOfflineCommands.remove(index);
             goOfflineCommands.add(index - 1, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -141,6 +159,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             String command = goLiveCommands.get(index);
             goLiveCommands.remove(index);
             goLiveCommands.add(index + 1, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -153,6 +173,8 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             String command = goOfflineCommands.get(index);
             goOfflineCommands.remove(index);
             goOfflineCommands.add(index + 1, command);
+
+            save();
         } catch (Exception e) {
             MessageUtils.logDebug(e);
         }
@@ -163,7 +185,7 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
         return streamerUuid.compareTo(o.getStreamerUuid());
     }
 
-    public void tellStreamLink(CommandSender... to) {
+    public void tellStreamLinkCurrentlyLive(CommandSender... to) {
         StringBuilder stringBuilder = new StringBuilder();
 
         OfflinePlayer player = Bukkit.getOfflinePlayer(getStreamerUuid());
@@ -177,14 +199,74 @@ public class StreamerSetup implements Comparable<StreamerSetup> {
             playerName = onlinePlayer.getDisplayName();
         }
 
-        stringBuilder.append("&c").append(player.getName()).append(" &eis &alive &eat &b").append(streamLink).append("&8!");
+        stringBuilder.append("&c").append(playerName).append(" &eis currently &alive &eat &b").append(streamLink).append("&8!");
 
         BaseComponent textComponent = new ComponentBuilder(MessageUtils.colorize(stringBuilder.toString())).create()[0];
 
         ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, streamLink);
         textComponent.setClickEvent(clickEvent);
 
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(MessageUtils.colorize("&eClick to open stream!")).create());
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(MessageUtils.colorize("&6&lCLICK ME &7&oto join the stream&8!")).create());
+
+        textComponent.setHoverEvent(hoverEvent);
+
+        for (CommandSender sender : to) {
+            sender.spigot().sendMessage(textComponent);
+        }
+    }
+
+    public void tellStreamLinkGoingLive(CommandSender... to) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        OfflinePlayer player = Bukkit.getOfflinePlayer(getStreamerUuid());
+        Player onlinePlayer = null;
+
+        String playerName = player.getName();
+        if (player.isOnline()) {
+            onlinePlayer = player.getPlayer();
+        }
+        if (onlinePlayer != null) {
+            playerName = onlinePlayer.getDisplayName();
+        }
+
+        stringBuilder.append("&5&k!! &4\u23fa &c&lLIVE NOW &4\u23fa &5&k!! &b").append(playerName).append(" &ehas just gone &alive &eat&8: &d&o").append(streamLink).append("&8!");
+
+        BaseComponent textComponent = new ComponentBuilder(MessageUtils.colorize(stringBuilder.toString())).create()[0];
+
+        ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, streamLink);
+        textComponent.setClickEvent(clickEvent);
+
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(MessageUtils.colorize("&6&lCLICK ME &7&oto join the stream&8!")).create());
+
+        textComponent.setHoverEvent(hoverEvent);
+
+        for (CommandSender sender : to) {
+            sender.spigot().sendMessage(textComponent);
+        }
+    }
+
+    public void tellStreamLinkGoingOffline(CommandSender... to) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        OfflinePlayer player = Bukkit.getOfflinePlayer(getStreamerUuid());
+        Player onlinePlayer = null;
+
+        String playerName = player.getName();
+        if (player.isOnline()) {
+            onlinePlayer = player.getPlayer();
+        }
+        if (onlinePlayer != null) {
+            playerName = onlinePlayer.getDisplayName();
+        }
+
+        stringBuilder.append("&b").append(playerName).append(" &ehas just gone &coffline&8. &eThey were live at&8: &d&o").append(streamLink).append("&8!");
+
+        BaseComponent textComponent = new ComponentBuilder(MessageUtils.colorize(stringBuilder.toString())).create()[0];
+
+        ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, streamLink);
+        textComponent.setClickEvent(clickEvent);
+
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(MessageUtils.colorize("&6&lCLICK ME &7&oto view their channel&8!")).create());
 
         textComponent.setHoverEvent(hoverEvent);
 

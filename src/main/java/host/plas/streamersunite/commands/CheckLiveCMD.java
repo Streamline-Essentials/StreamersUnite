@@ -5,7 +5,6 @@ import host.plas.streamersunite.data.LiveManager;
 import io.streamlined.bukkit.commands.CommandContext;
 import io.streamlined.bukkit.commands.SimplifiedCommand;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -41,7 +40,7 @@ public class CheckLiveCMD extends SimplifiedCommand {
         commandContext.sendMessage("&5&m     &r &6&lCURRENTLY LIVE &5&m     &r");
 
         CommandSender finalSender = sender;
-        LiveManager.getCurrentlyLiveSetups().forEach(setup -> setup.tellStreamLink(finalSender));
+        LiveManager.getCurrentlyLiveSetups().forEach(setup -> setup.tellStreamLinkCurrentlyLive(finalSender));
 
         return true;
     }

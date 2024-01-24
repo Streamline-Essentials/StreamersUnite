@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class StreamerCMD extends SimplifiedCommand {
-    public StreamerCMD() {
-        super("sustreamer", StreamersUnite.getInstance());
+public class SetUpStreamerCMD extends SimplifiedCommand {
+    public SetUpStreamerCMD() {
+        super("set-up-streamer", StreamersUnite.getInstance());
     }
 
     @Override
@@ -66,6 +66,33 @@ public class StreamerCMD extends SimplifiedCommand {
 
                 commandContext.sendMessage("&eRemoved &d" + rplayer + " &efrom the streamer list.");
                 return true;
+            case "set-link":
+                if (commandContext.getArgs().size() != 3) {
+                    commandContext.sendMessage("&cUsage: /sustreamer set-link <player> <link>");
+                    return true;
+                }
+
+                String splayer = commandContext.getStringArg(1);
+                String slink = commandContext.getStringArg(2);
+
+                OfflinePlayer sofflinePlayer = Bukkit.getOfflinePlayer(splayer);
+                if (sofflinePlayer == null) {
+                    commandContext.sendMessage("&cPlayer not found.");
+                    return true;
+                }
+
+                StreamerSetup ssetup = StreamersUnite.getStreamerConfig().getSetup(sofflinePlayer.getUniqueId().toString()).orElse(null);
+                if (ssetup == null) {
+                    commandContext.sendMessage("&cPlayer not found.");
+                    return true;
+                }
+
+                ssetup.setStreamLink(slink);
+
+                StreamersUnite.getStreamerConfig().saveSetup(ssetup);
+
+                commandContext.sendMessage("&eSet the stream link for &d" + splayer + " &eto &d" + slink + "&e.");
+                return true;
             case "commands":
                 if (commandContext.getArgs().size() < 5) {
                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
@@ -100,7 +127,7 @@ public class StreamerCMD extends SimplifiedCommand {
                                 StringBuilder caBuilder = new StringBuilder();
 
                                 for (CommandArgument argument : commandContext.getArgs()) {
-                                    if (argument.getIndex() < 5) continue;
+                                    if (argument.getIndex() < 4) continue;
 
                                     caBuilder.append(argument.getContent()).append(" ");
                                 }
@@ -133,7 +160,7 @@ public class StreamerCMD extends SimplifiedCommand {
                                 StringBuilder ciBuilder = new StringBuilder();
 
                                 for (CommandArgument argument : commandContext.getArgs()) {
-                                    if (argument.getIndex() < 6) continue;
+                                    if (argument.getIndex() < 5) continue;
 
                                     ciBuilder.append(argument.getContent()).append(" ");
                                 }
@@ -365,9 +392,10 @@ public class StreamerCMD extends SimplifiedCommand {
     public ConcurrentSkipListSet<String> tabComplete(CommandContext commandContext) {
         ConcurrentSkipListSet<String> tab = new ConcurrentSkipListSet<>();
 
-        if (commandContext.getArgs().size() == 1) {
+        if (commandContext.getArgs().size() <= 1) {
             tab.add("add");
             tab.add("remove");
+            tab.add("set-link");
             tab.add("commands");
             tab.add("list");
         }
@@ -379,6 +407,7 @@ public class StreamerCMD extends SimplifiedCommand {
                     }
                     break;
                 case "remove":
+                case "set-link":
                 case "commands":
                     for (StreamerSetup setup : StreamersUnite.getStreamerConfig().getSetups()) {
                         OfflinePlayer player = Bukkit.getOfflinePlayer(setup.getStreamerUuid());
@@ -394,18 +423,15 @@ public class StreamerCMD extends SimplifiedCommand {
         if (commandContext.getArgs().size() == 3) {
             switch (commandContext.getStringArg(0)) {
                 case "add":
-                    tab.add("live");
-                    tab.add("offline");
+                case "set-link":
+                    tab.add("https://twitch.tv/");
+                    tab.add("https://youtube.com/");
                     break;
                 case "remove":
                     break;
                 case "commands":
-                    for (StreamerSetup setup : StreamersUnite.getStreamerConfig().getSetups()) {
-                        OfflinePlayer player = Bukkit.getOfflinePlayer(setup.getStreamerUuid());
-                        if (player == null) continue;
-
-                        tab.add(player.getName());
-                    }
+                    tab.add("live");
+                    tab.add("offline");
                     break;
                 case "list":
                     break;
@@ -414,8 +440,9 @@ public class StreamerCMD extends SimplifiedCommand {
         if (commandContext.getArgs().size() == 4) {
             switch (commandContext.getStringArg(0)) {
                 case "add":
-                    break;
                 case "remove":
+                case "set-link":
+                case "list":
                     break;
                 case "commands":
                     tab.add("add");
@@ -424,31 +451,87 @@ public class StreamerCMD extends SimplifiedCommand {
                     tab.add("up");
                     tab.add("down");
                     break;
-                case "list":
-                    break;
             }
         }
         if (commandContext.getArgs().size() == 5) {
             switch (commandContext.getStringArg(0)) {
                 case "add":
-                    break;
                 case "remove":
+                case "set-link":
+                case "list":
                     break;
                 case "commands":
                     switch (commandContext.getStringArg(3)) {
                         case "add":
+                            tab.add("command");
                             break;
                         case "remove":
-                            break;
                         case "insert":
-                            break;
                         case "up":
-                            break;
                         case "down":
+                            String player = commandContext.getStringArg(1);
+
+                            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
+                            if (offlinePlayer == null) {
+                                break;
+                            }
+
+                            StreamerSetup setup = StreamersUnite.getStreamerConfig().getSetup(offlinePlayer.getUniqueId().toString()).orElse(null);
+                            if (setup == null) {
+                                break;
+                            }
+
+                            for (int i = 0; i < setup.getGoLiveCommands().size(); i++) {
+                                tab.add(String.valueOf(i));
+                            }
                             break;
                     }
                     break;
+            }
+        }
+        if (commandContext.getArgs().size() == 6) {
+            switch (commandContext.getStringArg(0)) {
+                case "add":
+                case "remove":
+                case "set-link":
                 case "list":
+                    break;
+                case "commands":
+                    switch (commandContext.getStringArg(3)) {
+                        case "add":
+                            tab.add("argument" + (commandContext.getArgs().size() - 1 - 5));
+                            break;
+                        case "remove":
+                        case "up":
+                        case "down":
+                            break;
+                        case "insert":
+                            tab.add("command");
+                            break;
+                    }
+                    break;
+            }
+        }
+        if (commandContext.getArgs().size() >= 7) {
+            switch (commandContext.getStringArg(0)) {
+                case "add":
+                case "remove":
+                case "set-link":
+                case "list":
+                    break;
+                case "commands":
+                    switch (commandContext.getStringArg(3)) {
+                        case "add":
+                            tab.add("argument" + (commandContext.getArgs().size() - 1 - 5));
+                            break;
+                        case "remove":
+                        case "up":
+                        case "down":
+                            break;
+                        case "insert":
+                            tab.add("argument" + (commandContext.getArgs().size() - 1 - 6));
+                            break;
+                    }
                     break;
             }
         }

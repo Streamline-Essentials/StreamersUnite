@@ -2,6 +2,8 @@ package host.plas.streamersunite.commands;
 
 import host.plas.streamersunite.StreamersUnite;
 import host.plas.streamersunite.data.LiveManager;
+import host.plas.streamersunite.managers.NotificationTimer;
+import host.plas.streamersunite.managers.TimedEntry;
 import io.streamlined.bukkit.commands.CommandContext;
 import io.streamlined.bukkit.commands.SimplifiedCommand;
 import org.bukkit.Bukkit;
@@ -12,20 +14,20 @@ import org.bukkit.entity.Player;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class OfflineCMD extends SimplifiedCommand {
-    public OfflineCMD() {
-        super("offline", StreamersUnite.getInstance());
+public class GoLiveCMD extends SimplifiedCommand {
+    public GoLiveCMD() {
+        super("go-live", StreamersUnite.getInstance());
     }
 
     @Override
     public boolean command(CommandContext commandContext) {
         if (! commandContext.isPlayer()) {
-            return setOtherOffline(commandContext);
+            return other(commandContext);
         }
 
         Optional<Player> optionalPlayer = commandContext.getSender().getPlayer();
         if (optionalPlayer.isEmpty()) {
-            return setOtherOffline(commandContext);
+            return other(commandContext);
         }
 
         Player player = optionalPlayer.get();
@@ -33,30 +35,34 @@ public class OfflineCMD extends SimplifiedCommand {
         if (commandContext.getArgs().isEmpty()) {
             if (StreamersUnite.getStreamerConfig().getSetup(player.getUniqueId().toString()).isPresent()) {
                 if (LiveManager.isLive(player)) {
-                    LiveManager.initiateOffline(player);
-
-                    commandContext.getSender().sendMessage("&eYou have gone &coffline&8!");
+                    commandContext.getSender().sendMessage("&cYou are already live.");
+                    return false;
                 } else {
-                    LiveManager.initiateLive(player);
+                    commandContext.getSender().sendMessage("&eAttempting to set status to live&8...");
 
-                    commandContext.getSender().sendMessage("&eYou have gone &alive&8!");
+                    if (! LiveManager.initiateLive(player)) {
+                        commandContext.getSender().sendMessage("&cYou have already set your status as live recently!");
+                        return false;
+                    }
+
+                    return true;
                 }
-
-                return true;
             } else {
                 commandContext.getSender().sendMessage("&cYou must be a streamer to use this command!");
+
+                return false;
             }
         }
 
-        return setOtherOffline(commandContext);
+        return other(commandContext);
     }
 
-    public static boolean setOtherOffline(CommandContext commandContext) {
+    public static boolean other(CommandContext commandContext) {
         Optional<CommandSender> senderOptional = commandContext.getSender().getCommandSender();
         if (senderOptional.isEmpty()) {
             return false;
         }
-        if (! senderOptional.get().hasPermission("streamersunite.command.live.others")) {
+        if (! senderOptional.get().hasPermission("streamersunite.command.go-live.others")) {
             commandContext.getSender().sendMessage("&cYou do not have permission to set other players' live status!");
             return false;
         }
@@ -79,14 +85,17 @@ public class OfflineCMD extends SimplifiedCommand {
             return false;
         }
 
-        if (! LiveManager.isLive(offlinePlayer)) {
-            commandContext.getSender().sendMessage("&cThat player is already offline!");
+        if (LiveManager.isLive(offlinePlayer)) {
+            commandContext.getSender().sendMessage("&cThat player is already live!");
             return false;
         }
 
-        LiveManager.initiateOffline(offlinePlayer);
+        commandContext.getSender().sendMessage("&eAttempting to set &r" + offlinePlayer.getName() + " &eas live&8...");
 
-        commandContext.getSender().sendMessage("&eYou have set &r" + offlinePlayer.getName() + " &eto &coffline&8!");
+        if (! LiveManager.initiateLive(offlinePlayer)) {
+            commandContext.getSender().sendMessage("&cThat player has already set their status as live recently!");
+            return false;
+        }
 
         return true;
     }
@@ -97,8 +106,14 @@ public class OfflineCMD extends SimplifiedCommand {
         if (senderOptional.isEmpty()) {
             return new ConcurrentSkipListSet<>();
         }
-        if (! senderOptional.get().hasPermission("streamersunite.command.live.others")) {
-            commandContext.getSender().sendMessage("&cYou do not have permission to set other players' live status!");
+        if (! senderOptional.get().hasPermission("streamersunite.command.go-live.others")) {
+            if (NotificationTimer.hasNotification("go-live", senderOptional.get())) {
+                return new ConcurrentSkipListSet<>();
+            }
+
+            commandContext.getSender().sendMessage("&cYou do not have permission to set other players' live status to live!");
+
+            NotificationTimer.addNotification("go-live", senderOptional.get());
             return new ConcurrentSkipListSet<>();
         }
 

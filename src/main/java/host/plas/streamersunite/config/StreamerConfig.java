@@ -4,10 +4,7 @@ import host.plas.streamersunite.StreamersUnite;
 import host.plas.streamersunite.data.StreamerSetup;
 import tv.quaint.storage.resources.flat.simple.SimpleConfiguration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class StreamerConfig extends SimpleConfiguration {
     public StreamerConfig() {
@@ -45,6 +42,9 @@ public class StreamerConfig extends SimpleConfiguration {
     public Optional<StreamerSetup> getSetup(String uuid) {
         try {
             UUID u = UUID.fromString(uuid);
+
+            Set<String> singleKeySet = getResource().singleLayerKeySet();
+            if (! singleKeySet.contains(uuid)) return Optional.empty();
 
             StreamerSetup s = new StreamerSetup(
                     u,

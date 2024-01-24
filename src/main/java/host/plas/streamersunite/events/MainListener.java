@@ -2,7 +2,6 @@ package host.plas.streamersunite.events;
 
 import host.plas.streamersunite.StreamersUnite;
 import host.plas.streamersunite.data.LiveManager;
-import host.plas.streamersunite.managers.LogoutTimer;
 import host.plas.streamersunite.utils.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -23,7 +22,7 @@ public class MainListener implements Listener {
 
         if (StreamersUnite.getStreamerConfig().getSetup(player.getUniqueId().toString()).isPresent()) {
             if (LiveManager.isLive(player)) {
-                LogoutTimer.putTimedNow(player);
+                LiveManager.goOffline(player);
             }
         }
     }

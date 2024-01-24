@@ -1,6 +1,7 @@
 package host.plas.streamersunite.data;
 
 import host.plas.streamersunite.StreamersUnite;
+import host.plas.streamersunite.managers.TimedEntry;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LiveManager {
     @Getter @Setter
@@ -67,7 +69,13 @@ public class LiveManager {
         return r;
     }
 
-    public static void initiateLive(OfflinePlayer player) {
+    public static boolean initiateLive(OfflinePlayer player) {
+        if (TimedEntry.hasEntry("go-live", player.getUniqueId().toString())) {
+            return false;
+        }
+
+        AtomicBoolean r = new AtomicBoolean(false);
+
         StreamersUnite.getStreamerConfig().getSetup(player.getUniqueId().toString()).ifPresent(setup -> {
             if (! player.isOnline()) {
                 goLive(player);
@@ -79,7 +87,13 @@ public class LiveManager {
                 return;
             }
 
+            if (StreamersUnite.getMainConfig().announceGoLive()) {
+                setup.tellStreamLinkGoingLive(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+            }
+
             setup.getGoLiveCommands().forEach(command -> {
+                if (command == null) return;
+
                 String c = command
                         .replace("%player_name%", p.getName())
                         .replace("%player_uuid%", p.getUniqueId().toString())
@@ -94,6 +108,8 @@ public class LiveManager {
                     c = c.substring("!C!".length());
                     asConsole = true;
                 }
+
+                while (c.startsWith(" ")) c = c.substring(1);
 
                 if (asConsole) {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), c);
@@ -102,10 +118,22 @@ public class LiveManager {
                 }
             });
             goLive(player);
+
+            new TimedEntry<>(20 * 60 * 30, "go-live", player.getUniqueId().toString(), player);
+
+            r.set(true);
         });
+
+        return r.get();
     }
 
-    public static void initiateOffline(OfflinePlayer player) {
+    public static boolean initiateOffline(OfflinePlayer player) {
+        if (TimedEntry.hasEntry("go-offline", player.getUniqueId().toString())) {
+            return false;
+        }
+
+        AtomicBoolean r = new AtomicBoolean(false);
+
         StreamersUnite.getStreamerConfig().getSetup(player.getUniqueId().toString()).ifPresent(setup -> {
             if (! player.isOnline()) {
                 goOffline(player);
@@ -117,7 +145,13 @@ public class LiveManager {
                 return;
             }
 
+            if (StreamersUnite.getMainConfig().announceGoOffline()) {
+                setup.tellStreamLinkGoingOffline(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+            }
+
             setup.getGoOfflineCommands().forEach(command -> {
+                if (command == null) return;
+
                 String c = command
                         .replace("%player_name%", p.getName())
                         .replace("%player_uuid%", p.getUniqueId().toString())
@@ -133,6 +167,8 @@ public class LiveManager {
                     asConsole = true;
                 }
 
+                while (c.startsWith(" ")) c = c.substring(1);
+
                 if (asConsole) {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), c);
                 } else {
@@ -140,22 +176,38 @@ public class LiveManager {
                 }
             });
             goOffline(player);
+
+            new TimedEntry<>(20 * 60 * 30, "go-offline", player.getUniqueId().toString(), player);
+
+            r.set(true);
         });
+
+        return r.get();
     }
 
-    public static void initiateLive(UUID player) {
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
-
-        if (offlinePlayer != null) {
-            initiateLive(offlinePlayer);
+    public static boolean broadcastLive(OfflinePlayer player) {
+        if (TimedEntry.hasEntry("broadcast-live", player.getUniqueId().toString())) {
+            return false;
         }
-    }
 
-    public static void initiateOffline(UUID player) {
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
+        AtomicBoolean r = new AtomicBoolean(false);
 
-        if (offlinePlayer != null) {
-            initiateOffline(offlinePlayer);
-        }
+        StreamersUnite.getStreamerConfig().getSetup(player.getUniqueId().toString()).ifPresent(setup -> {
+            if (! player.isOnline()) {
+                return;
+            }
+            Player p = player.getPlayer();
+            if (p == null) {
+                return;
+            }
+
+            setup.tellStreamLinkCurrentlyLive(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+
+            new TimedEntry<>(20 * 60 * 30, "broadcast-live", player.getUniqueId().toString(), player);
+
+            r.set(true);
+        });
+
+        return r.get();
     }
 }
