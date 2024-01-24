@@ -88,7 +88,11 @@ public class LiveManager {
             }
 
             if (StreamersUnite.getMainConfig().announceGoLive()) {
-                setup.tellStreamLinkGoingLive(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+                if (! TimedEntry.hasEntry("broadcast", player.getUniqueId().toString())) {
+                    setup.tellStreamLinkGoingLive(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+
+                    new TimedEntry<>(20 * 60 * 30, "broadcast", player.getUniqueId().toString(), player);
+                }
             }
 
             setup.getGoLiveCommands().forEach(command -> {
@@ -146,7 +150,11 @@ public class LiveManager {
             }
 
             if (StreamersUnite.getMainConfig().announceGoOffline()) {
-                setup.tellStreamLinkGoingOffline(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+                if (! TimedEntry.hasEntry("broadcast", player.getUniqueId().toString())) {
+                    setup.tellStreamLinkGoingOffline(Bukkit.getOnlinePlayers().toArray(Player[]::new));
+
+                    new TimedEntry<>(20 * 60 * 30, "broadcast", player.getUniqueId().toString(), player);
+                }
             }
 
             setup.getGoOfflineCommands().forEach(command -> {
@@ -186,7 +194,7 @@ public class LiveManager {
     }
 
     public static boolean broadcastLive(OfflinePlayer player) {
-        if (TimedEntry.hasEntry("broadcast-live", player.getUniqueId().toString())) {
+        if (TimedEntry.hasEntry("broadcast", player.getUniqueId().toString())) {
             return false;
         }
 
@@ -203,7 +211,7 @@ public class LiveManager {
 
             setup.tellStreamLinkCurrentlyLive(Bukkit.getOnlinePlayers().toArray(Player[]::new));
 
-            new TimedEntry<>(20 * 60 * 30, "broadcast-live", player.getUniqueId().toString(), player);
+            new TimedEntry<>(20 * 60 * 30, "broadcast", player.getUniqueId().toString(), player);
 
             r.set(true);
         });
