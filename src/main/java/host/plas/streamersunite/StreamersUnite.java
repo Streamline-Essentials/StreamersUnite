@@ -3,6 +3,7 @@ package host.plas.streamersunite;
 import host.plas.streamersunite.commands.*;
 import host.plas.streamersunite.config.MainConfig;
 import host.plas.streamersunite.config.StreamerConfig;
+import host.plas.streamersunite.data.LiveManager;
 import host.plas.streamersunite.events.MainListener;
 import io.streamlined.bukkit.PluginBase;
 import lombok.Getter;
@@ -66,6 +67,7 @@ public final class StreamersUnite extends PluginBase {
     @Override
     public void onBaseDisable() {
         // Plugin shutdown logic
+        LiveManager.getCurrentlyLive().clear();
     }
 
     /**
