@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 public class CheckLiveCMD extends SimplifiedCommand {
     public CheckLiveCMD() {
-        super("livenow", StreamersUnite.getInstance());
+        super("live-rn", StreamersUnite.getInstance());
     }
 
     @Override
@@ -25,7 +25,7 @@ public class CheckLiveCMD extends SimplifiedCommand {
 
         CommandSender sender = senderOptional.get();
 
-        if (commandContext.getArg(0).isUsable()) {
+        if (commandContext.getArg(0).isUsable() && sender.hasPermission("streamersunite.command.live-rn.other")) {
             String target = commandContext.getStringArg(0);
             Player player = Bukkit.getPlayer(target);
             if (player != null) {
@@ -47,6 +47,15 @@ public class CheckLiveCMD extends SimplifiedCommand {
 
     @Override
     public ConcurrentSkipListSet<String> tabComplete(CommandContext commandContext) {
-        return new ConcurrentSkipListSet<>();
+        ConcurrentSkipListSet<String> strings = new ConcurrentSkipListSet<>();
+
+        if (commandContext.getArg(0).isUsable() && commandContext.getSender().getCommandSender().isPresent()) {
+            CommandSender sender = commandContext.getSender().getCommandSender().get();
+            if (sender.hasPermission("streamersunite.command.live-rn.other")) {
+                Bukkit.getOnlinePlayers().forEach(player -> strings.add(player.getName()));
+            }
+        }
+
+        return strings;
     }
 }
