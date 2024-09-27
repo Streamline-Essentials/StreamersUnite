@@ -1,20 +1,21 @@
-package host.plas.streamersunite.managers;
+package host.plas.managers;
 
-import io.streamlined.bukkit.instances.BaseRunnable;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.command.CommandSender;
+import singularity.data.console.CosmicSender;
+import singularity.scheduler.BaseRunnable;
+import tv.quaint.objects.Identifiable;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Getter @Setter
-public class NotificationTimer extends BaseRunnable {
+public class NotificationTimer extends BaseRunnable implements Identifiable {
     @Getter @Setter
     private static ConcurrentSkipListSet<NotificationTimer> notifications = new ConcurrentSkipListSet<>();
 
-    public static Optional<NotificationTimer> addNotification(String identifier, CommandSender sender) {
+    public static Optional<NotificationTimer> addNotification(String identifier, CosmicSender sender) {
         if (hasNotification(identifier, sender)) return Optional.empty();
 
         NotificationTimer notificationTimer = new NotificationTimer(identifier, sender);
@@ -23,13 +24,13 @@ public class NotificationTimer extends BaseRunnable {
         return Optional.of(notificationTimer);
     }
 
-    public static void removeNotification(String identifier, CommandSender sender) {
+    public static void removeNotification(String identifier, CosmicSender sender) {
         if (! hasNotification(identifier, sender)) return;
 
         getNotificationTimer(identifier, sender).ifPresent(notification -> notifications.remove(notification));
     }
 
-    public static Optional<NotificationTimer> getNotificationTimer(String identifier, CommandSender sender) {
+    public static Optional<NotificationTimer> getNotificationTimer(String identifier, CosmicSender sender) {
         AtomicReference<NotificationTimer> notificationTimer = new AtomicReference<>();
 
         notifications.forEach(notification -> {
@@ -41,22 +42,22 @@ public class NotificationTimer extends BaseRunnable {
         return Optional.ofNullable(notificationTimer.get());
     }
 
-    public static boolean hasNotification(String identifier, CommandSender sender) {
+    public static boolean hasNotification(String identifier, CosmicSender sender) {
         return getNotificationTimer(identifier, sender).isPresent();
     }
 
     private String identifier;
-    private CommandSender sender;
+    private CosmicSender sender;
 
-    private NotificationTimer(String identifier, CommandSender sender) {
-        super(5 * 20, 1, true); // 5 second delayed then cancels. Asynchronous.
+    private NotificationTimer(String identifier, CosmicSender sender) {
+        super(5 * 20, 1); // 5 second delayed then cancels. Asynchronous.
 
         this.identifier = identifier;
         this.sender = sender;
     }
 
     @Override
-    public void execute() {
+    public void run() {
         removeNotification(identifier, sender);
 
         cancel();

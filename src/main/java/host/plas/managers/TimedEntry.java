@@ -1,21 +1,22 @@
-package host.plas.streamersunite.managers;
+package host.plas.managers;
 
-import io.streamlined.bukkit.instances.BaseRunnable;
 import lombok.Getter;
 import lombok.Setter;
+import singularity.scheduler.BaseRunnable;
+import tv.quaint.objects.Identifiable;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 @Getter @Setter
-public class TimedEntry<T> extends BaseRunnable {
+public class TimedEntry<T> extends BaseRunnable implements Identifiable {
     private String identifier;
     private String discriminator;
     private T token;
 
     public TimedEntry(int delay, String identifier, String discriminator, T token) {
-        super(delay, 1, true); // ({delay} / 20) second delayed then cancels. Asynchronous.
+        super(delay, 1); // ({delay} / 20) second delayed then cancels. Asynchronous.
 
         this.identifier = identifier;
         this.discriminator = discriminator;
@@ -25,7 +26,7 @@ public class TimedEntry<T> extends BaseRunnable {
     }
 
     @Override
-    public void execute() {
+    public void run() {
         cancel();
         removeEntry(this);
     }
@@ -68,9 +69,5 @@ public class TimedEntry<T> extends BaseRunnable {
 
     public static boolean hasEntry(String identifier, String discriminator) {
         return getEntry(identifier, discriminator).isPresent();
-    }
-
-    public static int getTicksLeft(String identifier, String discriminator) {
-        return getEntry(identifier, discriminator).map(entry -> entry.getDelay() - entry.getTicksLived()).orElse(0);
     }
 }

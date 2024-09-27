@@ -1,7 +1,7 @@
-package host.plas.streamersunite.config;
+package host.plas.config;
 
-import host.plas.streamersunite.StreamersUnite;
-import host.plas.streamersunite.data.StreamerSetup;
+import host.plas.data.StreamerSetup;
+import host.plas.StreamersUnite;
 import tv.quaint.storage.resources.flat.simple.SimpleConfiguration;
 
 import java.util.*;

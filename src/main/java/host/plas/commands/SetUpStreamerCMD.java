@@ -1,27 +1,35 @@
-package host.plas.streamersunite.commands;
+package host.plas.commands;
 
-import host.plas.streamersunite.StreamersUnite;
-import host.plas.streamersunite.data.StreamerSetup;
-import io.streamlined.bukkit.commands.CommandArgument;
-import io.streamlined.bukkit.commands.CommandContext;
-import io.streamlined.bukkit.commands.SimplifiedCommand;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import host.plas.StreamersUnite;
+import host.plas.data.StreamerSetup;
+import host.plas.managers.StreamerUtils;
+import singularity.command.ModuleCommand;
+import singularity.command.CosmicCommand;
+import singularity.command.context.CommandArgument;
+import singularity.command.context.CommandContext;
+import singularity.data.console.CosmicSender;
+import singularity.data.players.CosmicPlayer;
+import singularity.utils.UserUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class SetUpStreamerCMD extends SimplifiedCommand {
+public class SetUpStreamerCMD extends ModuleCommand {
     public SetUpStreamerCMD() {
-        super("set-up-streamer", StreamersUnite.getInstance());
+        super(StreamersUnite.getInstance(),
+                "set-up-streamer",
+                "streamersunite.command.set-up-streamer",
+                "sustreamer");
     }
 
     @Override
-    public boolean command(CommandContext commandContext) {
+    public void run(CommandContext<CosmicCommand> commandContext) {
         if (commandContext.getArgs().isEmpty()) {
             commandContext.sendMessage("&cUsage: /sustreamer <add|remove|set|list> [args]");
-            return true;
+            return;
         }
 
         String action = commandContext.getStringArg(0);
@@ -30,61 +38,64 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
             case "add":
                 if (commandContext.getArgs().size() != 3) {
                     commandContext.sendMessage("&cUsage: /sustreamer add <player> <link>");
-                    return true;
+                    return;
                 }
 
                 String aplayer = commandContext.getStringArg(1);
                 String alink = commandContext.getStringArg(2);
 
-                OfflinePlayer aofflinePlayer = Bukkit.getOfflinePlayer(aplayer);
-                if (aofflinePlayer == null) {
-                    commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                Optional<CosmicSender> aoptional = StreamerUtils.getOrGetSenderByName(aplayer);
+                if (aoptional.isEmpty()) {
+                    commandContext.getSender().sendMessage("&cThat player does not exist!");
+                    return;
                 }
+                CosmicSender asender = aoptional.get();
 
-                StreamerSetup setup = new StreamerSetup(aofflinePlayer.getUniqueId(), new ArrayList<>(), new ArrayList<>(), alink);
+                StreamerSetup setup = new StreamerSetup(UUID.fromString(asender.getUuid()), new ArrayList<>(), new ArrayList<>(), alink);
 
                 StreamersUnite.getStreamerConfig().saveSetup(setup);
 
                 commandContext.sendMessage("&eAdded &d" + aplayer + " &eto the streamer list.");
-                return true;
+                return;
             case "remove":
                 if (commandContext.getArgs().size() != 2) {
                     commandContext.sendMessage("&cUsage: /sustreamer remove <player>");
-                    return true;
+                    return;
                 }
 
                 String rplayer = commandContext.getStringArg(1);
 
-                OfflinePlayer rofflinePlayer = Bukkit.getOfflinePlayer(rplayer);
-                if (rofflinePlayer == null) {
-                    commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                Optional<CosmicSender> roptional = StreamerUtils.getOrGetSenderByName(rplayer);
+                if (roptional.isEmpty()) {
+                    commandContext.getSender().sendMessage("&cThat player does not exist!");
+                    return;
                 }
+                CosmicSender rsender = roptional.get();
 
-                StreamersUnite.getStreamerConfig().deleteSetup(rofflinePlayer.getUniqueId().toString());
+                StreamersUnite.getStreamerConfig().deleteSetup(rsender.getUuid());
 
                 commandContext.sendMessage("&eRemoved &d" + rplayer + " &efrom the streamer list.");
-                return true;
+                return;
             case "set-link":
                 if (commandContext.getArgs().size() != 3) {
                     commandContext.sendMessage("&cUsage: /sustreamer set-link <player> <link>");
-                    return true;
+                    return;
                 }
 
                 String splayer = commandContext.getStringArg(1);
                 String slink = commandContext.getStringArg(2);
 
-                OfflinePlayer sofflinePlayer = Bukkit.getOfflinePlayer(splayer);
-                if (sofflinePlayer == null) {
-                    commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                Optional<CosmicSender> soptional = StreamerUtils.getOrGetSenderByName(splayer);
+                if (soptional.isEmpty()) {
+                    commandContext.getSender().sendMessage("&cThat player does not exist!");
+                    return;
                 }
+                CosmicSender ssender = soptional.get();
 
-                StreamerSetup ssetup = StreamersUnite.getStreamerConfig().getSetup(sofflinePlayer.getUniqueId().toString()).orElse(null);
+                StreamerSetup ssetup = StreamersUnite.getStreamerConfig().getSetup(ssender.getUuid()).orElse(null);
                 if (ssetup == null) {
                     commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                    return;
                 }
 
                 ssetup.setStreamLink(slink);
@@ -92,27 +103,28 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                 StreamersUnite.getStreamerConfig().saveSetup(ssetup);
 
                 commandContext.sendMessage("&eSet the stream link for &d" + splayer + " &eto &d" + slink + "&e.");
-                return true;
+                return;
             case "commands":
                 if (commandContext.getArgs().size() < 5) {
                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                    return true;
+                    return;
                 }
 
                 String cplayer = commandContext.getStringArg(1);
                 String ccommand = commandContext.getStringArg(2);
                 String caction = commandContext.getStringArg(3);
 
-                OfflinePlayer cofflinePlayer = Bukkit.getOfflinePlayer(cplayer);
-                if (cofflinePlayer == null) {
-                    commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                Optional<CosmicSender> coptional = StreamerUtils.getOrGetSenderByName(cplayer);
+                if (coptional.isEmpty()) {
+                    commandContext.getSender().sendMessage("&cThat player does not exist!");
+                    return;
                 }
+                CosmicSender csender = coptional.get();
 
-                StreamerSetup csetup = StreamersUnite.getStreamerConfig().getSetup(cofflinePlayer.getUniqueId().toString()).orElse(null);
+                StreamerSetup csetup = StreamersUnite.getStreamerConfig().getSetup(csender.getUuid()).orElse(null);
                 if (csetup == null) {
                     commandContext.sendMessage("&cPlayer not found.");
-                    return true;
+                    return;
                 }
 
                 switch (ccommand) {
@@ -121,7 +133,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "add":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 StringBuilder caBuilder = new StringBuilder();
@@ -136,7 +148,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
 
                                 if (caCmd.isBlank() || caCmd.isEmpty()) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.addCommand(StreamerSetup.CommandType.LIVE, caCmd);
@@ -146,7 +158,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "insert":
                                 if (commandContext.getArgs().size() < 6) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int ciindex = 0;
@@ -154,7 +166,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     ciindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 StringBuilder ciBuilder = new StringBuilder();
@@ -169,7 +181,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
 
                                 if (ciCmd.isBlank() || ciCmd.isEmpty()) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.insertCommand(StreamerSetup.CommandType.LIVE, ciindex, ciCmd);
@@ -179,7 +191,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "remove":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int crindex = 0;
@@ -188,7 +200,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     crindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.removeCommand(StreamerSetup.CommandType.LIVE, crindex);
@@ -198,7 +210,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "up":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int cuindex = 0;
@@ -207,7 +219,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     cuindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.upCommand(StreamerSetup.CommandType.LIVE, cuindex);
@@ -217,7 +229,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "down":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int cdindex = 0;
@@ -226,7 +238,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     cdindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.downCommand(StreamerSetup.CommandType.LIVE, cdindex);
@@ -243,7 +255,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "add":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 StringBuilder caBuilder = new StringBuilder();
@@ -258,7 +270,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
 
                                 if (caCmd.isBlank() || caCmd.isEmpty()) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.addCommand(StreamerSetup.CommandType.OFFLINE, caCmd);
@@ -268,7 +280,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "insert":
                                 if (commandContext.getArgs().size() < 6) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int ciindex = 0;
@@ -277,7 +289,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     ciindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 StringBuilder ciBuilder = new StringBuilder();
@@ -292,7 +304,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
 
                                 if (ciCmd.isBlank() || ciCmd.isEmpty()) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.insertCommand(StreamerSetup.CommandType.OFFLINE, ciindex, ciCmd);
@@ -302,7 +314,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "remove":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int crindex = 0;
@@ -311,7 +323,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     crindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.removeCommand(StreamerSetup.CommandType.OFFLINE, crindex);
@@ -321,7 +333,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "up":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int cuindex = 0;
@@ -330,7 +342,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     cuindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.upCommand(StreamerSetup.CommandType.OFFLINE, cuindex);
@@ -340,7 +352,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                             case "down":
                                 if (commandContext.getArgs().size() < 5) {
                                     commandContext.sendMessage("&cUsage: /sustreamer commands <player> <live|offline> <add|remove|insert|up|down> <cmd|line>");
-                                    return true;
+                                    return;
                                 }
 
                                 int cdindex = 0;
@@ -349,7 +361,7 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                                     cdindex = commandContext.getIntArg(4).get();
                                 } catch (Exception e) {
                                     commandContext.sendMessage("&cInvalid index.");
-                                    return true;
+                                    return;
                                 }
 
                                 csetup.downCommand(StreamerSetup.CommandType.OFFLINE, cdindex);
@@ -363,33 +375,40 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                         break;
                     default:
                         commandContext.sendMessage("&cInvalid type. Should be 'live' or 'offline'.");
-                        return true;
+                        return;
                 }
-                return true;
+                return;
             case "list":
                 List<StreamerSetup> setups = StreamersUnite.getStreamerConfig().getSetups();
 
                 if (setups.isEmpty()) {
                     commandContext.sendMessage("&cNo streamers found.");
-                    return true;
+                    return;
                 }
 
                 commandContext.sendMessage("&eStreamer List:");
                 for (StreamerSetup lsetup : setups) {
-                    OfflinePlayer lplayer = Bukkit.getOfflinePlayer(lsetup.getStreamerUuid());
+                    CosmicSender lplayer = StreamerUtils.getOrGetSender(lsetup.getStreamerUuid().toString()).orElse(null);
                     if (lplayer == null) continue;
 
-                    commandContext.sendMessage("&e- &d" + lsetup.getStreamerUuid() + " &7(&c" + lplayer.getName() + "&7)");
+                    String playerName = lplayer.getUuid();
+                    try {
+                        playerName = lplayer.getDisplayName();
+                    } catch (Exception e) {
+                        // do nothing
+                    }
+
+                    commandContext.sendMessage("&e- &d" + lsetup.getStreamerUuid() + " &7(&c" + playerName + "&7)");
                 }
-                return true;
+                return;
             default:
                 commandContext.sendMessage("&cUsage: /sustreamer <add|remove|set|list> [args]");
-                return true;
+                return;
         }
     }
 
     @Override
-    public ConcurrentSkipListSet<String> tabComplete(CommandContext commandContext) {
+    public ConcurrentSkipListSet<String> doTabComplete(CommandContext commandContext) {
         ConcurrentSkipListSet<String> tab = new ConcurrentSkipListSet<>();
 
         if (commandContext.getArgs().size() <= 1) {
@@ -402,18 +421,24 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
         if (commandContext.getArgs().size() == 2) {
             switch (commandContext.getStringArg(0)) {
                 case "add":
-                    for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                        tab.add(player.getName());
+                    for (CosmicPlayer player : UserUtils.getOnlinePlayers().values()) {
+                        if (player.getCurrentName() != null &&
+                                ! player.getCurrentName().isBlank() &&
+                                ! player.getCurrentName().isEmpty())
+                            tab.add(player.getCurrentName());
                     }
                     break;
                 case "remove":
                 case "set-link":
                 case "commands":
                     for (StreamerSetup setup : StreamersUnite.getStreamerConfig().getSetups()) {
-                        OfflinePlayer player = Bukkit.getOfflinePlayer(setup.getStreamerUuid());
+                        CosmicSender player = UserUtils.getOrCreateSender(setup.getStreamerUuid().toString());
                         if (player == null) continue;
 
-                        tab.add(player.getName());
+                        if (player.getCurrentName() != null &&
+                                    ! player.getCurrentName().isBlank() &&
+                                    ! player.getCurrentName().isEmpty())
+                                tab.add(player.getCurrentName());
                     }
                     break;
                 case "list":
@@ -471,12 +496,13 @@ public class SetUpStreamerCMD extends SimplifiedCommand {
                         case "down":
                             String player = commandContext.getStringArg(1);
 
-                            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
-                            if (offlinePlayer == null) {
+                            Optional<CosmicSender> optional = StreamerUtils.getOrGetSenderByName(player);
+                            if (optional.isEmpty()) {
                                 break;
                             }
+                            CosmicSender s = optional.get();
 
-                            StreamerSetup setup = StreamersUnite.getStreamerConfig().getSetup(offlinePlayer.getUniqueId().toString()).orElse(null);
+                            StreamerSetup setup = StreamersUnite.getStreamerConfig().getSetup(s.getUuid()).orElse(null);
                             if (setup == null) {
                                 break;
                             }
